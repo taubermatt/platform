@@ -28,6 +28,7 @@ import {
   createDomainAction,
   verifyDomainAction,
   getDomainVerificationDetailsAction,
+  getProjectDnsRecordsAction,
 } from "@/app/actions";
 import { rootDomain } from "@/lib/utils";
 
@@ -147,17 +148,22 @@ function IconPicker({
 function DnsInstructions({ domain }: { domain: string }) {
   const [verificationDetails, getVerificationDetails, isGettingDetails] =
     useActionState<any, FormData>(getDomainVerificationDetailsAction, {});
+  const [dnsRecords, getDnsRecords, isGettingDnsRecords] = useActionState<
+    any,
+    FormData
+  >(getProjectDnsRecordsAction, {});
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
-  // Get verification details when component mounts
+  // Get verification details and DNS records when component mounts
   useEffect(() => {
     const formData = new FormData();
     formData.append("domain", domain);
     getVerificationDetails(formData);
-  }, [domain, getVerificationDetails]);
+    getDnsRecords(new FormData());
+  }, [domain, getVerificationDetails, getDnsRecords]);
 
   return (
     <Card>
@@ -173,50 +179,68 @@ function DnsInstructions({ domain }: { domain: string }) {
         </p>
 
         <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-          {/* A Record */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">A Record (Recommended):</h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Type:</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border">
-                  A
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Name:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm bg-white px-2 py-1 rounded border">
-                    @
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard("@")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Value:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm bg-white px-2 py-1 rounded border font-mono">
-                    216.150.1.1
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard("216.150.1.1")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
+          {isGettingDnsRecords ? (
+            <div className="text-center py-4">
+              <span className="text-sm text-gray-500">
+                Loading DNS records...
+              </span>
             </div>
-          </div>
+          ) : dnsRecords?.records && dnsRecords.records.length > 0 ? (
+            dnsRecords.records.map((record: any, index: number) => (
+              <div key={index} className="space-y-2">
+                <h4 className="text-sm font-medium">
+                  {record.type} Record{" "}
+                  {record.name !== "@" ? `(${record.name})` : ""}:
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Type:</span>
+                    <span className="text-sm bg-white px-2 py-1 rounded border">
+                      {record.type}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Name:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm bg-white px-2 py-1 rounded border">
+                        {record.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(record.name)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Value:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm bg-white px-2 py-1 rounded border font-mono text-xs">
+                        {record.value}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(record.value)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <span className="text-sm text-gray-500">
+                Unable to load DNS records
+              </span>
+            </div>
+          )}
 
           {/* TXT Record for verification */}
           <div className="space-y-2">

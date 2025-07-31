@@ -3,7 +3,7 @@
 import { redis } from '@/lib/redis';
 import { isValidIcon } from '@/lib/subdomains';
 import { isValidDomain, createDomain, deleteDomain, updateDomainVerification } from '@/lib/domains';
-import { addDomainToProject, verifyDomain, removeDomainFromProject, getDomainVerificationDetails } from '@/lib/vercel';
+import { addDomainToProject, verifyDomain, removeDomainFromProject, getDomainVerificationDetails, getProjectDnsRecords } from '@/lib/vercel';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
@@ -212,5 +212,18 @@ export async function getDomainVerificationDetailsAction(
     success: true,
     verified: vercelResult.verified,
     verification: vercelResult.verification,
+  };
+}
+
+export async function getProjectDnsRecordsAction() {
+  const vercelResult = await getProjectDnsRecords();
+  
+  if (!vercelResult.success) {
+    return { error: `Failed to get DNS records: ${vercelResult.error}` };
+  }
+
+  return {
+    success: true,
+    records: vercelResult.records,
   };
 }

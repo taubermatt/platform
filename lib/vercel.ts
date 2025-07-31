@@ -25,6 +25,38 @@ export async function addDomainToProject(domain: string) {
   }
 }
 
+export async function getProjectDnsRecords() {
+  try {
+    const projectId = process.env.VERCEL_PROJECT_ID || 'platforms';
+    const teamId = process.env.VERCEL_TEAM_ID;
+    
+    const url = teamId 
+      ? `https://api.vercel.com/v9/projects/${projectId}/domains/records?teamId=${teamId}`
+      : `https://api.vercel.com/v9/projects/${projectId}/domains/records`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${process.env.VERCEL_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch DNS records: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return { success: true, records: data.records || [] };
+  } catch (error) {
+    console.error('Error fetching DNS records:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      records: []
+    };
+  }
+}
+
 export async function getDomainVerificationDetails(domain: string) {
   try {
     const domainResponse = await projectsGetProjectDomain(vercel, {
