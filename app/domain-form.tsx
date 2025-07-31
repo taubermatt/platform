@@ -10,13 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Smile,
-  CheckCircle,
-  AlertCircle,
-  Copy,
-  ExternalLink,
-} from "lucide-react";
+import { Smile } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   EmojiPicker,
@@ -24,37 +18,14 @@ import {
   EmojiPickerSearch,
   EmojiPickerFooter,
 } from "@/components/ui/emoji-picker";
-import {
-  createDomainAction,
-  verifyDomainAction,
-  getProjectDnsRecordsAction,
-} from "@/app/actions";
+import { createDomainAction } from "@/app/actions";
 import { rootDomain } from "@/lib/utils";
-
-type DnsRecord = {
-  type: "A" | "CNAME" | "TXT";
-  name: string;
-  value: string;
-  description?: string;
-};
 
 type CreateState = {
   error?: string;
   success?: boolean;
   domain?: string;
   icon?: string;
-  step?: "input" | "dns" | "verifying" | "complete";
-  dnsRecords?: {
-    type: string;
-    name: string;
-    value: string;
-  }[];
-};
-
-type VerifyState = {
-  error?: string;
-  success?: string;
-  verified?: boolean;
 };
 
 function DomainInput({ defaultValue }: { defaultValue?: string }) {
@@ -151,219 +122,21 @@ function IconPicker({
   );
 }
 
-function DnsInstructions({ domain }: { domain: string }) {
-  const [dnsRecords, getDnsRecords, isGettingDnsRecords] = useActionState<
-    { success?: boolean; error?: string; records?: DnsRecord[] },
-    FormData
-  >(getProjectDnsRecordsAction, {});
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  // Get DNS records when component mounts
-  useEffect(() => {
-    const formData = new FormData();
-    formData.append("domain", domain);
-    getDnsRecords(formData);
-  }, [domain, getDnsRecords]);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-yellow-500" />
-          Configure DNS Records
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-gray-600">
-          Add the following DNS records to your domain's DNS settings:
-        </p>
-
-        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-          {isGettingDnsRecords ? (
-            <div className="text-center py-4">
-              <span className="text-sm text-gray-500">
-                Loading DNS records...
-              </span>
-            </div>
-          ) : dnsRecords?.records && dnsRecords.records.length > 0 ? (
-            dnsRecords.records.map((record: DnsRecord, index: number) => (
-              <div key={index} className="space-y-2">
-                <h4 className="text-sm font-medium">
-                  {record.type} Record{" "}
-                  {record.name !== "@" ? `(${record.name})` : ""}:
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Type:</span>
-                    <span className="text-sm bg-white px-2 py-1 rounded border">
-                      {record.type}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Name:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm bg-white px-2 py-1 rounded border">
-                        {record.name}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(record.name)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Value:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm bg-white px-2 py-1 rounded border font-mono text-xs">
-                        {record.value}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(record.value)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  {record.description && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {record.description}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-4">
-              <span className="text-sm text-gray-500">
-                Unable to load DNS records
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs text-gray-500">
-            <strong>Note:</strong> DNS changes can take up to 24 hours to
-            propagate.
-          </p>
-          <Button variant="outline" size="sm" asChild>
-            <a
-              href="https://vercel.com/docs/concepts/projects/custom-domains"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Learn more about DNS configuration
-            </a>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function VerificationStep({ domain }: { domain: string }) {
-  const [verifyState, verifyAction, isVerifyPending] = useActionState<
-    VerifyState,
-    FormData
-  >(verifyDomainAction, {});
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-blue-500" />
-          Verify Domain
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-gray-600">
-          After adding the DNS records, click the button below to verify your
-          domain:
-        </p>
-
-        <form action={verifyAction}>
-          <input type="hidden" name="domain" value={domain} />
-          <Button type="submit" className="w-full" disabled={isVerifyPending}>
-            {isVerifyPending ? "Verifying..." : "Verify Domain"}
-          </Button>
-        </form>
-
-        {verifyState.error && (
-          <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
-            {verifyState.error}
-          </div>
-        )}
-
-        {verifyState.success && (
-          <div className="text-sm text-green-500 bg-green-50 p-3 rounded">
-            {verifyState.success}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export function DomainForm() {
   const [icon, setIcon] = useState("");
-  const [currentStep, setCurrentStep] = useState<
-    "input" | "dns" | "verifying" | "complete"
-  >("input");
 
   const [state, action, isPending] = useActionState<CreateState, FormData>(
     createDomainAction,
     {}
   );
 
-  // Handle step progression
+  // Reset form when successful
   useEffect(() => {
-    if (state?.step) {
-      setCurrentStep(state.step);
+    if (state?.success) {
+      setIcon("");
+      // The action will redirect to the domain page
     }
-  }, [state?.step]);
-
-  // Check if we should show DNS instructions
-  const shouldShowDns = state?.success && state?.domain;
-
-  if (shouldShowDns) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            Domain Added Successfully!
-          </h3>
-          <p className="text-sm text-gray-600">
-            Your domain <strong>{state.domain}</strong> has been added to our
-            system.
-          </p>
-        </div>
-
-        <DnsInstructions domain={state.domain!} />
-        <VerificationStep domain={state.domain!} />
-
-        <Button
-          variant="outline"
-          onClick={() => setCurrentStep("input")}
-          className="w-full"
-        >
-          Add Another Domain
-        </Button>
-      </div>
-    );
-  }
+  }, [state?.success]);
 
   return (
     <form action={action} className="space-y-4">

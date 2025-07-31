@@ -128,13 +128,8 @@ export async function createDomainAction(
   // Create domain in our database
   await createDomain(sanitizedDomain, icon);
 
-  // Return success state for multi-step flow
-  return {
-    success: true,
-    domain: sanitizedDomain,
-    icon,
-    step: 'dns' as const
-  };
+  // Redirect to the domain page
+  redirect(`${protocol}://${sanitizedDomain}`);
 }
 
 export async function deleteDomainAction(

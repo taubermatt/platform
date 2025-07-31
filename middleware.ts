@@ -70,8 +70,8 @@ export async function middleware(request: NextRequest) {
 
   // Handle subdomain routing (existing functionality)
   if (subdomain) {
-    // Block access to admin page from subdomains
-    if (pathname.startsWith('/admin')) {
+    // Block access to management pages from subdomains
+    if (pathname.startsWith('/subdomains') || pathname.startsWith('/domains')) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 
@@ -86,8 +86,8 @@ export async function middleware(request: NextRequest) {
     const host = request.headers.get('host') || '';
     const hostname = host.split(':')[0];
 
-    // Block access to admin page from custom domains
-    if (pathname.startsWith('/admin')) {
+    // Block access to management pages from custom domains
+    if (pathname.startsWith('/subdomains') || pathname.startsWith('/domains')) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 

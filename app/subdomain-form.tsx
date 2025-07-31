@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import type React from 'react';
+import type React from "react";
 
-import { useState } from 'react';
-import { useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
-import { Smile } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Smile } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import {
   EmojiPicker,
   EmojiPickerContent,
   EmojiPickerSearch,
-  EmojiPickerFooter
-} from '@/components/ui/emoji-picker';
-import { createSubdomainAction } from '@/app/actions';
-import { rootDomain } from '@/lib/utils';
+  EmojiPickerFooter,
+} from "@/components/ui/emoji-picker";
+import { createSubdomainAction } from "@/app/actions";
+import { rootDomain } from "@/lib/utils";
 
 type CreateState = {
   error?: string;
@@ -56,7 +56,7 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
 function IconPicker({
   icon,
   setIcon,
-  defaultValue
+  defaultValue,
 }: {
   icon: string;
   setIcon: (icon: string) => void;
@@ -125,12 +125,20 @@ function IconPicker({
 }
 
 export function SubdomainForm() {
-  const [icon, setIcon] = useState('');
+  const [icon, setIcon] = useState("");
 
   const [state, action, isPending] = useActionState<CreateState, FormData>(
     createSubdomainAction,
     {}
   );
+
+  // Reset form when successful
+  useEffect(() => {
+    if (state?.success) {
+      setIcon("");
+      // The action will redirect to the subdomain page
+    }
+  }, [state?.success]);
 
   return (
     <form action={action} className="space-y-4">
@@ -139,11 +147,13 @@ export function SubdomainForm() {
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
 
       {state?.error && (
-        <div className="text-sm text-red-500">{state.error}</div>
+        <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
+          {state.error}
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={isPending || !icon}>
-        {isPending ? 'Creating...' : 'Create Subdomain'}
+        {isPending ? "Creating..." : "Create Subdomain"}
       </Button>
     </form>
   );
