@@ -215,8 +215,15 @@ export async function getDomainVerificationDetailsAction(
   };
 }
 
-export async function getProjectDnsRecordsAction() {
-  const vercelResult = await getProjectDnsRecords();
+export async function getProjectDnsRecordsAction(prevState: any, formData: FormData) {
+  const domain = formData.get('domain') as string;
+  
+  if (!domain) {
+    return { error: 'Domain is required' };
+  }
+
+  const sanitizedDomain = domain.toLowerCase().trim();
+  const vercelResult = await getProjectDnsRecords(sanitizedDomain);
   
   if (!vercelResult.success) {
     return { error: `Failed to get DNS records: ${vercelResult.error}` };

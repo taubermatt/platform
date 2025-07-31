@@ -27,7 +27,6 @@ import {
 import {
   createDomainAction,
   verifyDomainAction,
-  getDomainVerificationDetailsAction,
   getProjectDnsRecordsAction,
 } from "@/app/actions";
 import { rootDomain } from "@/lib/utils";
@@ -153,8 +152,6 @@ function IconPicker({
 }
 
 function DnsInstructions({ domain }: { domain: string }) {
-  const [verificationDetails, getVerificationDetails, isGettingDetails] =
-    useActionState<any, FormData>(getDomainVerificationDetailsAction, {});
   const [dnsRecords, getDnsRecords, isGettingDnsRecords] = useActionState<
     { success?: boolean; error?: string; records?: DnsRecord[] },
     FormData
@@ -164,13 +161,12 @@ function DnsInstructions({ domain }: { domain: string }) {
     navigator.clipboard.writeText(text);
   };
 
-  // Get verification details and DNS records when component mounts
+  // Get DNS records when component mounts
   useEffect(() => {
     const formData = new FormData();
     formData.append("domain", domain);
-    getVerificationDetails(formData);
-    getDnsRecords(new FormData());
-  }, [domain, getVerificationDetails, getDnsRecords]);
+    getDnsRecords(formData);
+  }, [domain, getDnsRecords]);
 
   return (
     <Card>
@@ -253,67 +249,6 @@ function DnsInstructions({ domain }: { domain: string }) {
               </span>
             </div>
           )}
-
-          {/* TXT Record for verification */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">
-              TXT Record (for verification):
-            </h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Type:</span>
-                <span className="text-sm bg-white px-2 py-1 rounded border">
-                  TXT
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Name:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm bg-white px-2 py-1 rounded border">
-                    _vercel
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard("_vercel")}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Value:</span>
-                <div className="flex items-center gap-2">
-                  {isGettingDetails ? (
-                    <span className="text-sm text-gray-500">Loading...</span>
-                  ) : verificationDetails?.verification?.expectedTxtRecord ? (
-                    <>
-                      <span className="text-sm bg-white px-2 py-1 rounded border font-mono text-xs">
-                        {verificationDetails.verification.expectedTxtRecord}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          copyToClipboard(
-                            verificationDetails.verification.expectedTxtRecord
-                          )
-                        }
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </>
-                  ) : (
-                    <span className="text-sm text-gray-500">
-                      Unable to load verification code
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-2">

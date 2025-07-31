@@ -32,25 +32,43 @@ export async function addDomainToProject(domain: string) {
   }
 }
 
-export async function getProjectDnsRecords() {
+export async function getProjectDnsRecords(domain: string) {
   try {
-    // Vercel doesn't have a direct API to fetch DNS records
-    // Instead, we'll return the standard records that Vercel requires
-    // These are the recommended records for custom domains
+    // Get the domain details from Vercel to get the actual DNS records
+    const domainResponse = await projectsGetProjectDomain(vercel, {
+      idOrName: process.env.VERCEL_PROJECT_ID || 'platforms',
+      teamId: process.env.VERCEL_TEAM_ID,
+      domain,
+    });
+
+    const { value: result } = domainResponse;
+    
+    if (!result) {
+      throw new Error('Domain not found in Vercel project');
+    }
+
+    // Build the DNS records based on Vercel's current recommendations
     const records: DnsRecord[] = [
       {
         type: 'A',
         name: '@',
-        value: '76.76.19.76',
+        value: '216.150.1.1', // Vercel's current recommended A record
         description: 'Apex domain record'
-      },
-      {
-        type: 'CNAME',
-        name: 'www',
-        value: 'cname.vercel-dns.com',
-        description: 'WWW subdomain record'
       }
     ];
+
+    // Add verification TXT record if available
+    if (result.verification && result.verification.length > 0) {
+      const txtRecord = result.verification.find((v: any) => v.type === 'TXT');
+      if (txtRecord) {
+        records.push({
+          type: 'TXT',
+          name: '_vercel',
+          value: txtRecord.value,
+          description: 'Domain verification record'
+        });
+      }
+    }
     
     return { success: true, records };
   } catch (error) {
