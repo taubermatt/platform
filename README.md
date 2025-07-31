@@ -115,7 +115,12 @@ pnpm dev
 
 For local development, you'll need to create a `.env.local` file with the same environment variables.
 
-Note: Adjustments are needed to run with redis locally and custom domains cannot be tested in local development only subdomains.
+## Development Notes
+
+- **Subdomains**: Work perfectly in local development
+- **Custom Domains**: Require real domains and DNS configuration
+- **Redis**: Mock Redis is used in development if not configured
+- **Wildcard DNS**: For subdomains, add `*.yourdomain.com` CNAME to Vercel
 
 ## Usage
 
@@ -132,9 +137,11 @@ Note: Adjustments are needed to run with redis locally and custom domains cannot
 2. Use the "Custom Domain Example" form
 3. Enter your domain like `myapp.com`
 4. The domain will be added to your Vercel project
-5. Configure DNS to point to Vercel
-6. Verify domain ownership
-7. SSL certificate will be automatically generated
+5. Follow the DNS configuration instructions:
+   - Add a CNAME record pointing to `yourdomain.cname.vercel-dns.com`
+   - Wait for DNS propagation (up to 24 hours)
+6. Click "Verify Domain" to check DNS configuration
+7. SSL certificate will be automatically generated once verified
 
 ## Admin Panels
 

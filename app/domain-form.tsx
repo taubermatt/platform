@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,21 +10,40 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Smile } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import {
+  Smile,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+  ExternalLink,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   EmojiPicker,
   EmojiPickerContent,
   EmojiPickerSearch,
   EmojiPickerFooter,
 } from "@/components/ui/emoji-picker";
-import { createDomainAction } from "@/app/actions";
+import { createDomainAction, verifyDomainAction } from "@/app/actions";
+import { rootDomain } from "@/lib/utils";
 
 type CreateState = {
   error?: string;
   success?: boolean;
   domain?: string;
   icon?: string;
+  step?: "input" | "dns" | "verifying" | "complete";
+  dnsRecords?: {
+    type: string;
+    name: string;
+    value: string;
+  }[];
+};
+
+type VerifyState = {
+  error?: string;
+  success?: string;
+  verified?: boolean;
 };
 
 function DomainInput({ defaultValue }: { defaultValue?: string }) {
@@ -123,26 +140,194 @@ function IconPicker({
   );
 }
 
+function DnsInstructions({ domain }: { domain: string }) {
+  const cnameValue = `${rootDomain.split(":")[0]}.cname.vercel-dns.com`;
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-yellow-500" />
+          Configure DNS Records
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Add the following CNAME record to your domain's DNS settings:
+        </p>
+
+        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Type:</span>
+            <span className="text-sm bg-white px-2 py-1 rounded border">
+              CNAME
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Name:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm bg-white px-2 py-1 rounded border">
+                @
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard("@")}
+                className="h-6 w-6 p-0"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Value:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm bg-white px-2 py-1 rounded border font-mono">
+                {cnameValue}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(cnameValue)}
+                className="h-6 w-6 p-0"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500">
+            <strong>Note:</strong> DNS changes can take up to 24 hours to
+            propagate.
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <a
+              href="https://vercel.com/docs/concepts/projects/custom-domains"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Learn more about DNS configuration
+            </a>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VerificationStep({ domain }: { domain: string }) {
+  const [verifyState, verifyAction, isVerifyPending] = useActionState<
+    VerifyState,
+    FormData
+  >(verifyDomainAction, {});
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-blue-500" />
+          Verify Domain
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-gray-600">
+          After adding the DNS records, click the button below to verify your
+          domain:
+        </p>
+
+        <form action={verifyAction}>
+          <input type="hidden" name="domain" value={domain} />
+          <Button type="submit" className="w-full" disabled={isVerifyPending}>
+            {isVerifyPending ? "Verifying..." : "Verify Domain"}
+          </Button>
+        </form>
+
+        {verifyState.error && (
+          <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
+            {verifyState.error}
+          </div>
+        )}
+
+        {verifyState.success && (
+          <div className="text-sm text-green-500 bg-green-50 p-3 rounded">
+            {verifyState.success}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DomainForm() {
   const [icon, setIcon] = useState("");
+  const [currentStep, setCurrentStep] = useState<
+    "input" | "dns" | "verifying" | "complete"
+  >("input");
 
   const [state, action, isPending] = useActionState<CreateState, FormData>(
     createDomainAction,
     {}
   );
 
+  // Handle step progression
+  useEffect(() => {
+    if (state?.step) {
+      setCurrentStep(state.step);
+    }
+  }, [state?.step]);
+
+  // Check if we should show DNS instructions
+  const shouldShowDns = state?.success && state?.domain;
+
+  if (shouldShowDns) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            Domain Added Successfully!
+          </h3>
+          <p className="text-sm text-gray-600">
+            Your domain <strong>{state.domain}</strong> has been added to our
+            system.
+          </p>
+        </div>
+
+        <DnsInstructions domain={state.domain!} />
+        <VerificationStep domain={state.domain!} />
+
+        <Button
+          variant="outline"
+          onClick={() => setCurrentStep("input")}
+          className="w-full"
+        >
+          Add Another Domain
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form action={action} className="space-y-4">
       <DomainInput defaultValue={state?.domain} />
-
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
 
       {state?.error && (
-        <div className="text-sm text-red-500">{state.error}</div>
+        <div className="text-sm text-red-500 bg-red-50 p-3 rounded">
+          {state.error}
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={isPending || !icon}>
-        {isPending ? "Creating..." : "Create Custom Domain"}
+        {isPending ? "Adding Domain..." : "Add Custom Domain"}
       </Button>
     </form>
   );
