@@ -128,8 +128,13 @@ export async function createDomainAction(
   // Create domain in our database
   await createDomain(sanitizedDomain, icon);
 
-  // Redirect to the domains management page instead of the unverified domain
-  redirect('/domains');
+  // Return success state for multi-step flow
+  return {
+    success: true,
+    domain: sanitizedDomain,
+    icon,
+    step: 'dns' as const
+  };
 }
 
 export async function deleteDomainAction(
