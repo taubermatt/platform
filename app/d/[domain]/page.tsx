@@ -42,7 +42,10 @@ export default async function DomainPage({
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="absolute top-4 left-4">
         <Button variant="outline" size="sm" asChild>
-          <Link href="/domains" className="flex items-center gap-2">
+          <Link
+            href={`${protocol}://${rootDomain}/domains`}
+            className="flex items-center gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to Domains
           </Link>

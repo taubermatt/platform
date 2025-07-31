@@ -132,11 +132,15 @@ export function SubdomainForm() {
     {}
   );
 
-  // Reset form when successful
+  // Redirect to subdomains page after successful creation
   useEffect(() => {
     if (state?.success) {
       setIcon("");
-      // The action will redirect to the subdomain page
+      // Small delay to show the success message
+      const timer = setTimeout(() => {
+        window.location.href = "/subdomains";
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [state?.success]);
 

@@ -58,7 +58,11 @@ export async function createSubdomainAction(
     createdAt: Date.now()
   });
 
-  redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`);
+  return {
+    success: true,
+    subdomain: sanitizedSubdomain,
+    icon
+  };
 }
 
 export async function deleteSubdomainAction(
@@ -184,11 +188,9 @@ export async function verifyDomainAction(
   await updateDomainVerification(sanitizedDomain, vercelResult.verified || false);
   
   revalidatePath('/admin');
-  return { 
-    success: vercelResult.verified 
-      ? 'Domain verified successfully' 
-      : 'Domain verification failed. Please check your DNS settings.'
-  };
+  return vercelResult.verified 
+    ? { success: 'Domain verified successfully' }
+    : { error: 'Domain verification failed. Please check your DNS settings.' };
 }
 
 export async function getDomainVerificationDetailsAction(

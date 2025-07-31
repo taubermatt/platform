@@ -7,29 +7,41 @@ function extractSubdomain(request: NextRequest): string | null {
   const host = request.headers.get('host') || '';
   const hostname = host.split(':')[0];
 
+  console.log('extractSubdomain - URL:', url);
+  console.log('extractSubdomain - Hostname:', hostname);
+  console.log('extractSubdomain - Root domain:', rootDomain);
+
   // Local development environment
   if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    console.log('extractSubdomain - Local development detected');
     // Try to extract subdomain from the full URL
     const fullUrlMatch = url.match(/http:\/\/([^.]+)\.localhost/);
     if (fullUrlMatch && fullUrlMatch[1]) {
+      console.log('extractSubdomain - Found subdomain from URL:', fullUrlMatch[1]);
       return fullUrlMatch[1];
     }
 
     // Fallback to host header approach
     if (hostname.includes('.localhost')) {
-      return hostname.split('.')[0];
+      const subdomain = hostname.split('.')[0];
+      console.log('extractSubdomain - Found subdomain from hostname:', subdomain);
+      return subdomain;
     }
 
+    console.log('extractSubdomain - No subdomain found in local development');
     return null;
   }
 
   // Production environment
   const rootDomainFormatted = rootDomain.split(':')[0];
+  console.log('extractSubdomain - Root domain formatted:', rootDomainFormatted);
 
   // Handle preview deployment URLs (tenant---branch-name.vercel.app)
   if (hostname.includes('---') && hostname.endsWith('.vercel.app')) {
     const parts = hostname.split('---');
-    return parts.length > 0 ? parts[0] : null;
+    const subdomain = parts.length > 0 ? parts[0] : null;
+    console.log('extractSubdomain - Preview deployment subdomain:', subdomain);
+    return subdomain;
   }
 
   // Regular subdomain detection
@@ -38,7 +50,16 @@ function extractSubdomain(request: NextRequest): string | null {
     hostname !== `www.${rootDomainFormatted}` &&
     hostname.endsWith(`.${rootDomainFormatted}`);
 
-  return isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, '') : null;
+  console.log('extractSubdomain - Is subdomain check:', {
+    hostname,
+    rootDomainFormatted,
+    isSubdomain,
+    endsWith: hostname.endsWith(`.${rootDomainFormatted}`)
+  });
+
+  const result = isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, '') : null;
+  console.log('extractSubdomain - Result:', result);
+  return result;
 }
 
 async function isCustomDomain(request: NextRequest): Promise<boolean> {
@@ -65,11 +86,22 @@ async function isCustomDomain(request: NextRequest): Promise<boolean> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = request.headers.get('host') || '';
+  const hostname = host.split(':')[0];
+  
+  console.log('Middleware - Hostname:', hostname);
+  console.log('Middleware - Pathname:', pathname);
+  
   const subdomain = extractSubdomain(request);
   const isCustomDomainRequest = await isCustomDomain(request);
+  
+  console.log('Middleware - Extracted subdomain:', subdomain);
+  console.log('Middleware - Is custom domain:', isCustomDomainRequest);
 
   // Handle subdomain routing (existing functionality)
   if (subdomain) {
+    console.log('Middleware - Processing subdomain:', subdomain);
+    
     // Block access to management pages from subdomains
     if (pathname.startsWith('/subdomains') || pathname.startsWith('/domains')) {
       return NextResponse.redirect(new URL('/', request.url));
@@ -77,6 +109,7 @@ export async function middleware(request: NextRequest) {
 
     // For the root path on a subdomain, rewrite to the subdomain page
     if (pathname === '/') {
+      console.log('Middleware - Rewriting to subdomain page:', `/s/${subdomain}`);
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url));
     }
   }

@@ -274,6 +274,17 @@ function VerificationStep({ domain }: { domain: string }) {
     FormData
   >(verifyDomainAction, {});
 
+  // Redirect to domains page after successful verification
+  useEffect(() => {
+    if (verifyState.success) {
+      // Small delay to show the success message
+      const timer = setTimeout(() => {
+        window.location.href = "/domains";
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [verifyState.success]);
+
   return (
     <Card>
       <CardHeader>
@@ -348,14 +359,6 @@ export function DomainForm() {
 
         <DnsInstructions domain={state.domain!} />
         <VerificationStep domain={state.domain!} />
-
-        <Button
-          variant="outline"
-          onClick={() => setCurrentStep("input")}
-          className="w-full"
-        >
-          Add Another Domain
-        </Button>
       </div>
     );
   }
