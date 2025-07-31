@@ -141,7 +141,7 @@ function IconPicker({
 }
 
 function DnsInstructions({ domain }: { domain: string }) {
-  const cnameValue = `${rootDomain.split(":")[0]}.cname.vercel-dns.com`;
+  const cnameValue = `cname.vercel-dns.com`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
