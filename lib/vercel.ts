@@ -9,6 +9,13 @@ export const vercel = new Vercel({
   bearerToken: process.env.VERCEL_TOKEN,
 });
 
+type DnsRecord = {
+  type: 'A' | 'CNAME' | 'TXT';
+  name: string;
+  value: string;
+  description?: string;
+};
+
 export async function addDomainToProject(domain: string) {
   try {
     await projectsAddProjectDomain(vercel, {
@@ -27,28 +34,27 @@ export async function addDomainToProject(domain: string) {
 
 export async function getProjectDnsRecords() {
   try {
-    const projectId = process.env.VERCEL_PROJECT_ID || 'platforms';
-    const teamId = process.env.VERCEL_TEAM_ID;
-    
-    const url = teamId 
-      ? `https://api.vercel.com/v9/projects/${projectId}/domains/records?teamId=${teamId}`
-      : `https://api.vercel.com/v9/projects/${projectId}/domains/records`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${process.env.VERCEL_TOKEN}`,
-        'Content-Type': 'application/json',
+    // Vercel doesn't have a direct API to fetch DNS records
+    // Instead, we'll return the standard records that Vercel requires
+    // These are the recommended records for custom domains
+    const records: DnsRecord[] = [
+      {
+        type: 'A',
+        name: '@',
+        value: '76.76.19.76',
+        description: 'Apex domain record'
       },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch DNS records: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return { success: true, records: data.records || [] };
+      {
+        type: 'CNAME',
+        name: 'www',
+        value: 'cname.vercel-dns.com',
+        description: 'WWW subdomain record'
+      }
+    ];
+    
+    return { success: true, records };
   } catch (error) {
-    console.error('Error fetching DNS records:', error);
+    console.error('Error getting DNS records:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error',

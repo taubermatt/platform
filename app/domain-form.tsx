@@ -32,6 +32,13 @@ import {
 } from "@/app/actions";
 import { rootDomain } from "@/lib/utils";
 
+type DnsRecord = {
+  type: "A" | "CNAME" | "TXT";
+  name: string;
+  value: string;
+  description?: string;
+};
+
 type CreateState = {
   error?: string;
   success?: boolean;
@@ -149,7 +156,7 @@ function DnsInstructions({ domain }: { domain: string }) {
   const [verificationDetails, getVerificationDetails, isGettingDetails] =
     useActionState<any, FormData>(getDomainVerificationDetailsAction, {});
   const [dnsRecords, getDnsRecords, isGettingDnsRecords] = useActionState<
-    any,
+    { success?: boolean; error?: string; records?: DnsRecord[] },
     FormData
   >(getProjectDnsRecordsAction, {});
 
@@ -186,7 +193,7 @@ function DnsInstructions({ domain }: { domain: string }) {
               </span>
             </div>
           ) : dnsRecords?.records && dnsRecords.records.length > 0 ? (
-            dnsRecords.records.map((record: any, index: number) => (
+            dnsRecords.records.map((record: DnsRecord, index: number) => (
               <div key={index} className="space-y-2">
                 <h4 className="text-sm font-medium">
                   {record.type} Record{" "}
@@ -231,6 +238,11 @@ function DnsInstructions({ domain }: { domain: string }) {
                       </Button>
                     </div>
                   </div>
+                  {record.description && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {record.description}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
