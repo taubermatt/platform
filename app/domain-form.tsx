@@ -24,7 +24,11 @@ import {
   EmojiPickerSearch,
   EmojiPickerFooter,
 } from "@/components/ui/emoji-picker";
-import { createDomainAction, verifyDomainAction } from "@/app/actions";
+import {
+  createDomainAction,
+  verifyDomainAction,
+  getDomainVerificationDetailsAction,
+} from "@/app/actions";
 import { rootDomain } from "@/lib/utils";
 
 type CreateState = {
@@ -141,11 +145,19 @@ function IconPicker({
 }
 
 function DnsInstructions({ domain }: { domain: string }) {
-  const cnameValue = `cname.vercel-dns.com`;
+  const [verificationDetails, getVerificationDetails, isGettingDetails] =
+    useActionState<any, FormData>(getDomainVerificationDetailsAction, {});
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  // Get verification details when component mounts
+  useEffect(() => {
+    const formData = new FormData();
+    formData.append("domain", domain);
+    getVerificationDetails(formData);
+  }, [domain, getVerificationDetails]);
 
   return (
     <Card>
@@ -157,46 +169,113 @@ function DnsInstructions({ domain }: { domain: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-gray-600">
-          Add the following CNAME record to your domain's DNS settings:
+          Add the following DNS records to your domain's DNS settings:
         </p>
 
-        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Type:</span>
-            <span className="text-sm bg-white px-2 py-1 rounded border">
-              CNAME
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Name:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm bg-white px-2 py-1 rounded border">
-                @
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => copyToClipboard("@")}
-                className="h-6 w-6 p-0"
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
+        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+          {/* A Record */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">A Record (Recommended):</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Type:</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border">
+                  A
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Name:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-white px-2 py-1 rounded border">
+                    @
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard("@")}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Value:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-white px-2 py-1 rounded border font-mono">
+                    216.150.1.1
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard("216.150.1.1")}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Value:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm bg-white px-2 py-1 rounded border font-mono">
-                {cnameValue}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => copyToClipboard(cnameValue)}
-                className="h-6 w-6 p-0"
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
+
+          {/* TXT Record for verification */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">
+              TXT Record (for verification):
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Type:</span>
+                <span className="text-sm bg-white px-2 py-1 rounded border">
+                  TXT
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Name:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-white px-2 py-1 rounded border">
+                    _vercel
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard("_vercel")}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Value:</span>
+                <div className="flex items-center gap-2">
+                  {isGettingDetails ? (
+                    <span className="text-sm text-gray-500">Loading...</span>
+                  ) : verificationDetails?.verification?.expectedTxtRecord ? (
+                    <>
+                      <span className="text-sm bg-white px-2 py-1 rounded border font-mono text-xs">
+                        {verificationDetails.verification.expectedTxtRecord}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          copyToClipboard(
+                            verificationDetails.verification.expectedTxtRecord
+                          )
+                        }
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      Unable to load verification code
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -25,6 +25,32 @@ export async function addDomainToProject(domain: string) {
   }
 }
 
+export async function getDomainVerificationDetails(domain: string) {
+  try {
+    const domainResponse = await projectsGetProjectDomain(vercel, {
+      idOrName: process.env.VERCEL_PROJECT_ID || 'platforms',
+      teamId: process.env.VERCEL_TEAM_ID,
+      domain,
+    });
+
+    const { value: result } = domainResponse;
+    
+    return {
+      success: true,
+      verified: result?.verified || false,
+      verification: result?.verification || null,
+    };
+  } catch (error) {
+    console.error('Error getting domain verification details:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      verified: false,
+      verification: null,
+    };
+  }
+}
+
 export async function verifyDomain(domain: string) {
   try {
     const [domainResponse, verifyResponse] = await Promise.all([

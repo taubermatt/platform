@@ -3,7 +3,7 @@
 import { redis } from '@/lib/redis';
 import { isValidIcon } from '@/lib/subdomains';
 import { isValidDomain, createDomain, deleteDomain, updateDomainVerification } from '@/lib/domains';
-import { addDomainToProject, verifyDomain, removeDomainFromProject } from '@/lib/vercel';
+import { addDomainToProject, verifyDomain, removeDomainFromProject, getDomainVerificationDetails } from '@/lib/vercel';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
@@ -188,5 +188,29 @@ export async function verifyDomainAction(
     success: vercelResult.verified 
       ? 'Domain verified successfully' 
       : 'Domain verification failed. Please check your DNS settings.'
+  };
+}
+
+export async function getDomainVerificationDetailsAction(
+  prevState: any,
+  formData: FormData
+) {
+  const domain = formData.get('domain') as string;
+  
+  if (!domain) {
+    return { error: 'Domain is required' };
+  }
+
+  const sanitizedDomain = domain.toLowerCase().trim();
+  const vercelResult = await getDomainVerificationDetails(sanitizedDomain);
+  
+  if (!vercelResult.success) {
+    return { error: `Failed to get verification details: ${vercelResult.error}` };
+  }
+
+  return {
+    success: true,
+    verified: vercelResult.verified,
+    verification: vercelResult.verification,
   };
 }
