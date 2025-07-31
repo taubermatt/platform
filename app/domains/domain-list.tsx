@@ -3,14 +3,7 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Trash2,
-  ExternalLink,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Shield,
-} from "lucide-react";
+import { Trash2, ExternalLink, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { deleteDomainAction, verifyDomainAction } from "@/app/actions";
 import { protocol } from "@/lib/utils";
@@ -20,7 +13,6 @@ type Domain = {
   emoji: string;
   createdAt: number;
   verified: boolean;
-  sslStatus: "pending" | "valid" | "error";
 };
 
 type DeleteState = {
@@ -65,26 +57,14 @@ export function DomainList({ domains }: { domains: Domain[] }) {
     if (!domain.verified) {
       return <XCircle className="h-4 w-4 text-red-500" />;
     }
-    if (domain.sslStatus === "valid") {
-      return <Shield className="h-4 w-4 text-green-500" />;
-    }
-    if (domain.sslStatus === "pending") {
-      return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-    }
-    return <XCircle className="h-4 w-4 text-red-500" />;
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
   };
 
   const getStatusText = (domain: Domain) => {
     if (!domain.verified) {
       return "Verification needed";
     }
-    if (domain.sslStatus === "valid") {
-      return "SSL active";
-    }
-    if (domain.sslStatus === "pending") {
-      return "SSL pending";
-    }
-    return "SSL error";
+    return "Verified";
   };
 
   if (domains.length === 0) {

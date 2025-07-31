@@ -36,7 +36,6 @@ type DomainData = {
   emoji: string;
   createdAt: number;
   verified: boolean;
-  sslStatus: 'pending' | 'valid' | 'error';
 };
 
 export async function getDomainData(domain: string) {
@@ -64,8 +63,7 @@ export async function getAllDomains() {
       domain,
       emoji: data?.emoji || '❓',
       createdAt: data?.createdAt || Date.now(),
-      verified: data?.verified || false,
-      sslStatus: data?.sslStatus || 'pending'
+      verified: data?.verified || false
     };
   });
 }
@@ -76,8 +74,7 @@ export async function createDomain(domain: string, emoji: string) {
   await redis.set(`domain:${sanitizedDomain}`, {
     emoji,
     createdAt: Date.now(),
-    verified: false,
-    sslStatus: 'pending'
+    verified: false
   });
   
   return { success: true };
@@ -103,16 +100,4 @@ export async function updateDomainVerification(domain: string, verified: boolean
   return { success: true };
 }
 
-export async function updateDomainSSLStatus(domain: string, sslStatus: 'pending' | 'valid' | 'error') {
-  const sanitizedDomain = domain.toLowerCase().trim();
-  const existingData = await redis.get<DomainData>(`domain:${sanitizedDomain}`);
-  
-  if (existingData) {
-    await redis.set(`domain:${sanitizedDomain}`, {
-      ...existingData,
-      sslStatus
-    });
-  }
-  
-  return { success: true };
-}
+

@@ -77,18 +77,9 @@ export default async function DomainPage({
               </p>
             </div>
           )}
-          {domainData.verified && domainData.sslStatus === "pending" && (
-            <div className="mt-4 p-3 bg-blue-100 border border-blue-400 rounded-md">
-              <p className="text-sm text-blue-800">
-                🔒 SSL certificate is being generated...
-              </p>
-            </div>
-          )}
-          {domainData.verified && domainData.sslStatus === "valid" && (
+          {domainData.verified && (
             <div className="mt-4 p-3 bg-green-100 border border-green-400 rounded-md">
-              <p className="text-sm text-green-800">
-                ✅ SSL certificate is active
-              </p>
+              <p className="text-sm text-green-800">✅ Domain verified</p>
             </div>
           )}
         </div>
