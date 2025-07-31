@@ -53,10 +53,10 @@ async function isCustomDomain(request: NextRequest): Promise<boolean> {
     return false;
   }
 
-  // Check if this hostname exists in our domain database
+  // Check if this hostname exists in our domain database and is verified
   try {
     const domainData = await getDomainData(hostname);
-    return !!domainData;
+    return !!(domainData && domainData.verified);
   } catch (error) {
     console.error('Error checking domain:', error);
     return false;

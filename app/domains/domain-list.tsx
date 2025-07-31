@@ -140,16 +140,28 @@ export function DomainList({ domains }: { domains: Domain[] }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    href={`${protocol}://${domain.domain}`}
-                    target="_blank"
-                    className="flex items-center gap-1"
+                {domain.verified ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link
+                      href={`${protocol}://${domain.domain}`}
+                      target="_blank"
+                      className="flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Visit
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="text-gray-400"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    Visit
-                  </Link>
-                </Button>
+                    Verify First
+                  </Button>
+                )}
                 {!domain.verified && (
                   <Button
                     variant="outline"

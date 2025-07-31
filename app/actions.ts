@@ -128,8 +128,8 @@ export async function createDomainAction(
   // Create domain in our database
   await createDomain(sanitizedDomain, icon);
 
-  // Redirect to the domain page
-  redirect(`${protocol}://${sanitizedDomain}`);
+  // Redirect to the domains management page instead of the unverified domain
+  redirect('/domains');
 }
 
 export async function deleteDomainAction(

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDomainData } from "@/lib/domains";
 import { protocol, rootDomain } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -38,6 +40,14 @@ export default async function DomainPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 to-white p-4">
+      <div className="absolute top-4 left-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/domains" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Domains
+          </Link>
+        </Button>
+      </div>
       <div className="absolute top-4 right-4">
         <Link
           href={`${protocol}://${rootDomain}`}
@@ -71,7 +81,7 @@ export default async function DomainPage({
               </p>
             </div>
           )}
-          {domainData.sslStatus === "valid" && (
+          {domainData.verified && domainData.sslStatus === "valid" && (
             <div className="mt-4 p-3 bg-green-100 border border-green-400 rounded-md">
               <p className="text-sm text-green-800">
                 ✅ SSL certificate is active
