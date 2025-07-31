@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { deleteSubdomainAction } from '@/app/actions';
-import { rootDomain, protocol } from '@/lib/utils';
+import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { deleteSubdomainAction } from "@/app/actions";
+import { rootDomain, protocol } from "@/lib/utils";
 
 type Tenant = {
   subdomain: string;
@@ -27,6 +27,18 @@ function DashboardHeader() {
       <h1 className="text-3xl font-bold">Subdomain Management</h1>
       <div className="flex items-center gap-4">
         <Link
+          href="/admin"
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Admin Home
+        </Link>
+        <Link
+          href="/admin/domains"
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Custom Domains
+        </Link>
+        <Link
           href={`${protocol}://${rootDomain}`}
           className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
@@ -40,7 +52,7 @@ function DashboardHeader() {
 function TenantGrid({
   tenants,
   action,
-  isPending
+  isPending,
 }: {
   tenants: Tenant[];
   action: (formData: FormData) => void;

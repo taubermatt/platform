@@ -1,90 +1,129 @@
-# Next.js Multi-Tenant Example
+# Multi-Tenant Platform
 
-A production-ready example of a multi-tenant application built with Next.js 15, featuring custom subdomains for each tenant.
+A Next.js application demonstrating both subdomain and custom domain multi-tenancy patterns using Vercel for domain management.
 
 ## Features
 
-- ✅ Custom subdomain routing with Next.js middleware
-- ✅ Tenant-specific content and pages
-- ✅ Shared components and layouts across tenants
-- ✅ Redis for tenant data storage
-- ✅ Admin interface for managing tenants
-- ✅ Emoji support for tenant branding
-- ✅ Support for local development with subdomains
-- ✅ Compatible with Vercel preview deployments
+### Subdomain Multi-Tenancy
 
-## Tech Stack
+- Create subdomains like `tenant.yourdomain.com`
+- Automatic routing to `/s/[subdomain]` pages
+- Simple emoji-based customization
+- Redis-based data storage
 
-- [Next.js 15](https://nextjs.org/) with App Router
-- [React 19](https://react.dev/)
-- [Upstash Redis](https://upstash.com/) for data storage
-- [Tailwind 4](https://tailwindcss.com/) for styling
-- [shadcn/ui](https://ui.shadcn.com/) for the design system
+### Custom Domain Multi-Tenancy
 
-## Getting Started
+- Connect custom domains like `customdomain.com`
+- Automatic routing to `/d/[domain]` pages
+- Vercel SDK integration for domain management
+- Domain verification and SSL certificate handling
+- Redis-based data storage with verification status
 
-### Prerequisites
+## Architecture
 
-- Node.js 18.17.0 or later
-- pnpm (recommended) or npm/yarn
-- Upstash Redis account (for production)
+```
+app/
+├── s/[subdomain]/page.tsx     # Subdomain tenant pages
+├── d/[domain]/page.tsx        # Custom domain tenant pages
+├── admin/
+│   ├── page.tsx               # Main admin dashboard
+│   ├── subdomains/
+│   │   ├── page.tsx           # Subdomain management page
+│   │   └── dashboard.tsx      # Subdomain management component
+│   └── domains/
+│       ├── page.tsx           # Custom domain management page
+│       └── dashboard.tsx      # Custom domain management component
+├── actions.ts                 # Server actions for both patterns
+├── subdomain-form.tsx         # Subdomain creation form
+└── domain-form.tsx            # Custom domain creation form
+
+lib/
+├── subdomains.ts              # Subdomain utilities
+├── domains.ts                 # Custom domain utilities
+├── vercel.ts                  # Vercel SDK integration
+└── redis.ts                   # Redis client
+```
+
+## Setup
+
+### Environment Variables
+
+```env
+# Redis (Upstash)
+KV_REST_API_URL=your_redis_url
+KV_REST_API_TOKEN=your_redis_token
+
+# Vercel (for custom domains)
+VERCEL_TOKEN=your_vercel_token
+VERCEL_TEAM_ID=your_team_id
+VERCEL_PROJECT_ID=your_project_id
+
+# Root domain
+NEXT_PUBLIC_ROOT_DOMAIN=yourdomain.com
+```
 
 ### Installation
 
-1. Clone the repository:
+```bash
+pnpm install
+pnpm dev
+```
 
-   ```bash
-   git clone https://github.com/vercel/platforms.git
-   cd platforms
-   ```
+## Usage
 
-2. Install dependencies:
+### Subdomains
 
-   ```bash
-   pnpm install
-   ```
+1. Visit the homepage
+2. Use the "Subdomain Example" form
+3. Create a subdomain like `myapp.yourdomain.com`
+4. Access your subdomain at `myapp.yourdomain.com`
 
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with:
+### Custom Domains
 
-   ```
-   KV_REST_API_URL=your_redis_url
-   KV_REST_API_TOKEN=your_redis_token
-   ```
+1. Visit the homepage
+2. Use the "Custom Domain Example" form
+3. Enter your domain like `myapp.com`
+4. The domain will be added to your Vercel project
+5. Configure DNS to point to Vercel
+6. Verify domain ownership
+7. SSL certificate will be automatically generated
 
-4. Start the development server:
+## Admin Panels
 
-   ```bash
-   pnpm dev
-   ```
+- `/admin` - Main admin dashboard with navigation
+- `/admin/subdomains` - Manage subdomains
+- `/admin/domains` - Manage custom domains
 
-5. Access the application:
-   - Main site: http://localhost:3000
-   - Admin panel: http://localhost:3000/admin
-   - Tenants: http://[tenant-name].localhost:3000
+## Middleware
 
-## Multi-Tenant Architecture
+The middleware handles routing for both patterns:
 
-This application demonstrates a subdomain-based multi-tenant architecture where:
+- Subdomains: `tenant.yourdomain.com` → `/s/tenant`
+- Custom domains: `customdomain.com` → `/d/customdomain.com`
 
-- Each tenant gets their own subdomain (`tenant.yourdomain.com`)
-- The middleware handles routing requests to the correct tenant
-- Tenant data is stored in Redis using a `subdomain:{name}` key pattern
-- The main domain hosts the landing page and admin interface
-- Subdomains are dynamically mapped to tenant-specific content
+## Data Storage
 
-The middleware (`middleware.ts`) intelligently detects subdomains across various environments (local development, production, and Vercel preview deployments).
+Both patterns use Redis for data storage:
 
-## Deployment
+- Subdomains: `subdomain:tenant` → `{ emoji, createdAt }`
+- Custom domains: `domain:customdomain.com` → `{ emoji, createdAt, verified, sslStatus }`
 
-This application is designed to be deployed on Vercel. To deploy:
+## Vercel Integration
 
-1. Push your repository to GitHub
-2. Connect your repository to Vercel
-3. Configure environment variables
-4. Deploy
+The custom domain implementation uses the Vercel SDK to:
 
-For custom domains, make sure to:
+- Add domains to your Vercel project
+- Verify domain ownership
+- Handle SSL certificate generation
+- Remove domains when deleted
 
-1. Add your root domain to Vercel
-2. Set up a wildcard DNS record (`*.yourdomain.com`) on Vercel
+## Development vs Production
+
+- **Development**: Uses `localhost:3000` for testing
+- **Production**: Uses your configured root domain
+
+## Security
+
+- Admin pages are blocked from subdomain/custom domain access
+- Domain validation prevents invalid inputs
+- Vercel handles SSL certificate security

@@ -2,10 +2,13 @@
 
 import { redis } from '@/lib/redis';
 import { isValidIcon } from '@/lib/subdomains';
+import { isValidDomain, createDomain, deleteDomain, updateDomainVerification } from '@/lib/domains';
+import { addDomainToProject, verifyDomain, removeDomainFromProject } from '@/lib/vercel';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
 
+// Subdomain actions (kept for reference)
 export async function createSubdomainAction(
   prevState: any,
   formData: FormData
@@ -66,4 +69,119 @@ export async function deleteSubdomainAction(
   await redis.del(`subdomain:${subdomain}`);
   revalidatePath('/admin');
   return { success: 'Domain deleted successfully' };
+}
+
+// Domain actions (new implementation)
+export async function createDomainAction(
+  prevState: any,
+  formData: FormData
+) {
+  const domain = formData.get('domain') as string;
+  const icon = formData.get('icon') as string;
+
+  if (!domain || !icon) {
+    return { success: false, error: 'Domain and icon are required' };
+  }
+
+  if (!isValidDomain(domain)) {
+    return {
+      domain,
+      icon,
+      success: false,
+      error: 'Please enter a valid domain name (e.g., myapp.com)'
+    };
+  }
+
+  if (!isValidIcon(icon)) {
+    return {
+      domain,
+      icon,
+      success: false,
+      error: 'Please enter a valid emoji (maximum 10 characters)'
+    };
+  }
+
+  const sanitizedDomain = domain.toLowerCase().trim();
+
+  // Check if domain already exists
+  const domainAlreadyExists = await redis.get(`domain:${sanitizedDomain}`);
+  if (domainAlreadyExists) {
+    return {
+      domain,
+      icon,
+      success: false,
+      error: 'This domain is already registered'
+    };
+  }
+
+  // Add domain to Vercel project
+  const vercelResult = await addDomainToProject(sanitizedDomain);
+  if (!vercelResult.success) {
+    return {
+      domain,
+      icon,
+      success: false,
+      error: `Failed to add domain to Vercel: ${vercelResult.error}`
+    };
+  }
+
+  // Create domain in our database
+  await createDomain(sanitizedDomain, icon);
+
+  // Redirect to the domain page
+  redirect(`${protocol}://${sanitizedDomain}`);
+}
+
+export async function deleteDomainAction(
+  prevState: any,
+  formData: FormData
+) {
+  const domain = formData.get('domain') as string;
+  
+  if (!domain) {
+    return { error: 'Domain is required' };
+  }
+
+  const sanitizedDomain = domain.toLowerCase().trim();
+
+  // Remove from Vercel
+  const vercelResult = await removeDomainFromProject(sanitizedDomain);
+  if (!vercelResult.success) {
+    console.error('Failed to remove domain from Vercel:', vercelResult.error);
+  }
+
+  // Remove from our database
+  await deleteDomain(sanitizedDomain);
+  
+  revalidatePath('/admin');
+  return { success: 'Domain deleted successfully' };
+}
+
+export async function verifyDomainAction(
+  prevState: any,
+  formData: FormData
+) {
+  const domain = formData.get('domain') as string;
+  
+  if (!domain) {
+    return { error: 'Domain is required' };
+  }
+
+  const sanitizedDomain = domain.toLowerCase().trim();
+
+  // Verify domain with Vercel
+  const vercelResult = await verifyDomain(sanitizedDomain);
+  if (!vercelResult.success) {
+    return { error: `Failed to verify domain: ${vercelResult.error}` };
+  }
+
+  // Update verification status in our database
+  await updateDomainVerification(sanitizedDomain, vercelResult.verified || false);
+  
+  revalidatePath('/admin');
+  return { 
+    success: vercelResult.verified 
+      ? 'Domain verified successfully' 
+      : 'Domain verification failed. Please check your DNS settings.'
+  };
 }

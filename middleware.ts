@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { rootDomain } from '@/lib/utils';
+import { getDomainData } from '@/lib/domains';
 
 function extractSubdomain(request: NextRequest): string | null {
   const url = request.url;
@@ -40,10 +41,34 @@ function extractSubdomain(request: NextRequest): string | null {
   return isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, '') : null;
 }
 
+async function isCustomDomain(request: NextRequest): Promise<boolean> {
+  const host = request.headers.get('host') || '';
+  const hostname = host.split(':')[0];
+  const rootDomainFormatted = rootDomain.split(':')[0];
+
+  // Skip if it's the root domain or a subdomain
+  if (hostname === rootDomainFormatted || 
+      hostname === `www.${rootDomainFormatted}` ||
+      hostname.endsWith(`.${rootDomainFormatted}`)) {
+    return false;
+  }
+
+  // Check if this hostname exists in our domain database
+  try {
+    const domainData = await getDomainData(hostname);
+    return !!domainData;
+  } catch (error) {
+    console.error('Error checking domain:', error);
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const subdomain = extractSubdomain(request);
+  const isCustomDomainRequest = await isCustomDomain(request);
 
+  // Handle subdomain routing (existing functionality)
   if (subdomain) {
     // Block access to admin page from subdomains
     if (pathname.startsWith('/admin')) {
@@ -53,6 +78,22 @@ export async function middleware(request: NextRequest) {
     // For the root path on a subdomain, rewrite to the subdomain page
     if (pathname === '/') {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url));
+    }
+  }
+
+  // Handle custom domain routing (new functionality)
+  if (isCustomDomainRequest) {
+    const host = request.headers.get('host') || '';
+    const hostname = host.split(':')[0];
+
+    // Block access to admin page from custom domains
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // For the root path on a custom domain, rewrite to the domain page
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL(`/d/${hostname}`, request.url));
     }
   }
 
