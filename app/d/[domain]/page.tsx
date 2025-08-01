@@ -72,8 +72,7 @@ export default async function DomainPage({
           {!domainData.verified && (
             <div className="mt-4 p-3 bg-yellow-100 border border-yellow-400 rounded-md">
               <p className="text-sm text-yellow-800">
-                ⚠️ Domain verification pending. SSL certificate will be issued
-                once verified.
+                ⚠️ Domain verification pending
               </p>
             </div>
           )}
