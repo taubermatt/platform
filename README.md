@@ -25,14 +25,12 @@ A Next.js application demonstrating both subdomain and custom domain multi-tenan
 app/
 ├── s/[subdomain]/page.tsx     # Subdomain tenant pages
 ├── d/[domain]/page.tsx        # Custom domain tenant pages
-├── admin/
-│   ├── page.tsx               # Main admin dashboard
-│   ├── subdomains/
-│   │   ├── page.tsx           # Subdomain management page
-│   │   └── dashboard.tsx      # Subdomain management component
-│   └── domains/
-│       ├── page.tsx           # Custom domain management page
-│       └── dashboard.tsx      # Custom domain management component
+├── subdomains/
+│   ├── page.tsx               # Subdomain management page
+│   └── subdomain-list.tsx     # Subdomain list component
+├── domains/
+│   ├── page.tsx               # Custom domain management page
+│   └── domain-list.tsx        # Custom domain list component
 ├── actions.ts                 # Server actions for both patterns
 ├── subdomain-form.tsx         # Subdomain creation form
 └── domain-form.tsx            # Custom domain creation form
@@ -106,7 +104,21 @@ NEXT_PUBLIC_ROOT_DOMAIN=yourdomain.com
 - `VERCEL_TEAM_ID`: Only needed if using a team account
 - `NEXT_PUBLIC_ROOT_DOMAIN`: Your root domain for production, defaults to 'localhost:3000' for development
 
-### 5. Local Development
+### 5. Domain Configuration
+
+**For Subdomains:**
+
+1. Add your apex domain to Vercel: `yourdomain.com`
+2. Add wildcard domain to Vercel: `*.yourdomain.com`
+3. Configure DNS with wildcard record: `*` → `cname.vercel-dns.com`
+
+**For Custom Domains:**
+
+- Each custom domain is automatically added to Vercel when created
+- DNS configuration is handled through the multi-step form
+- SSL certificates are automatically generated after verification
+
+### 6. Local Development
 
 ```bash
 pnpm install
@@ -115,12 +127,19 @@ pnpm dev
 
 For local development, you'll need to create a `.env.local` file with the same environment variables.
 
+**Local Subdomain Testing:**
+
+- First, create a "test" subdomain using the `/subdomains` UI
+- Then visit `http://test.localhost:3000` to test subdomains locally
+- The middleware will automatically detect and route subdomains in development
+
 ## Development Notes
 
-- **Subdomains**: Work perfectly in local development
+- **Subdomains**: Work in both local development and production
 - **Custom Domains**: Require real domains and DNS configuration
 - **Redis**: Mock Redis is used in development if not configured
-- **Wildcard DNS**: For subdomains, add `*.yourdomain.com` CNAME to Vercel
+- **Wildcard DNS**: For subdomains, add `*.yourdomain.com` to Vercel project settings
+- **Local Testing**: Use `http://test.localhost:3000` for subdomain testing
 
 ## Usage
 
@@ -143,11 +162,11 @@ For local development, you'll need to create a `.env.local` file with the same e
 6. Click "Verify Domain" to check DNS configuration
 7. SSL certificate will be automatically generated once verified
 
-## Admin Panels
+## Management Pages
 
-- `/admin` - Main admin dashboard with navigation
-- `/admin/subdomains` - Manage subdomains
-- `/admin/domains` - Manage custom domains
+- `/` - Main navigation hub
+- `/subdomains` - Manage subdomains
+- `/domains` - Manage custom domains
 
 ## Middleware
 
@@ -161,7 +180,7 @@ The middleware handles routing for both patterns:
 Both patterns use Redis for data storage:
 
 - Subdomains: `subdomain:tenant` → `{ emoji, createdAt }`
-- Custom domains: `domain:customdomain.com` → `{ emoji, createdAt, verified, sslStatus }`
+- Custom domains: `domain:customdomain.com` → `{ emoji, createdAt, verified }`
 
 ## Vercel Integration
 

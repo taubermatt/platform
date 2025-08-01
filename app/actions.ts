@@ -5,8 +5,6 @@ import { isValidIcon } from '@/lib/subdomains';
 import { isValidDomain, createDomain, deleteDomain, updateDomainVerification } from '@/lib/domains';
 import { addDomainToProject, verifyDomain, removeDomainFromProject, getDomainVerificationDetails, getProjectDnsRecords } from '@/lib/vercel';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { rootDomain, protocol } from '@/lib/utils';
 
 // Subdomain actions (kept for reference)
 export async function createSubdomainAction(
@@ -71,8 +69,8 @@ export async function deleteSubdomainAction(
 ) {
   const subdomain = formData.get('subdomain');
   await redis.del(`subdomain:${subdomain}`);
-  revalidatePath('/admin');
-  return { success: 'Domain deleted successfully' };
+  revalidatePath('/subdomains');
+  return { success: 'Subdomain deleted successfully' };
 }
 
 // Domain actions (new implementation)
@@ -162,7 +160,7 @@ export async function deleteDomainAction(
   // Remove from our database
   await deleteDomain(sanitizedDomain);
   
-  revalidatePath('/admin');
+  revalidatePath('/domains');
   return { success: 'Domain deleted successfully' };
 }
 
@@ -187,7 +185,7 @@ export async function verifyDomainAction(
   // Update verification status in our database
   await updateDomainVerification(sanitizedDomain, vercelResult.verified || false);
   
-  revalidatePath('/admin');
+  revalidatePath('/domains');
   return vercelResult.verified 
     ? { success: 'Domain verified successfully' }
     : { error: 'Domain verification failed. Please check your DNS settings.' };
